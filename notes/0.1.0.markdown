@@ -1,0 +1,41 @@
+# first release
+
+Based on the [less-sbt][ls]
+
+- Compiles [less][less] to css using external lessc compiler
+- Optional built-in minification
+- Watchable file change support `~ less`
+
+## settings
+
+    less # compiles less source files
+    charset(for less) # character encoding used in file IO (defaults to utf-8)
+    mini(for less) # setting for compiled minification (false by default)
+    filter(for less) # filter for files included by the plugin
+    exclude-filter(for less) # filter for files ignored by the plugin
+    unmanaged-sources(for less) # lists resolved less sources
+    clean(for less) # deletes compiled css
+    config:source-directory(for less) # where less files will be resolved from
+    config:resource-managed(for less) # where compiled css will be copied to
+    
+## install it
+
+In your plugin definition add
+
+    addSbtPlugin("com.hitsoft" % "lessc-sbt" % "0.1.0")
+    
+And in your build file add
+
+    seq(lessSettings:_*)
+    
+This will add less settings for the Compile and Test configurations.
+
+To add it to other configurations, use
+
+    seq(lessSettingsIn(SomeOtherConfig):_*)
+
+For more information see the project [readme][rm]
+
+[rm]: https://github.com/hitsoft/lessc-sbt#readme
+[ls]: https://github.com/softprops/less-sbt#readme
+[less]: http://lesscss.org/
