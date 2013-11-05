@@ -1,11 +1,9 @@
-package less
+package com.hitsoft.sbt.lessc
 
 import java.io.File
 import sbt.IO
 
-private [less] object Files {
-  val ImportsDelimiter = "\n"
-}
+
 
 class LessSourceMapping(
   val lessFile: File, sourcesDir: File,

@@ -1,21 +1,13 @@
-package less
+package com.hitsoft.sbt.lessc
 
 import sbt._
 import sbt.Keys._
-import sbt.Def.{ ScopedKey }
+import sbt.Def.ScopedKey
 import java.io.File
 import java.nio.charset.Charset
 import scala.sys.process.Process
 
-/** 2.10 shim for classifying Non fatal exceptions in exception handling */
-private [less] object NonFatal {
-  def apply(t: Throwable): Boolean = t match {
-    case _: StackOverflowError => true
-    case _: VirtualMachineError | _: ThreadDeath | _: InterruptedException | _: LinkageError  => false
-    case _ => true
-  }
-  def unapply(t: Throwable): Option[Throwable] = if (apply(t)) Some(t) else None
-}
+
 
 /** Sbt frontend for the less CSS compiler */
 object Plugin extends sbt.Plugin {
