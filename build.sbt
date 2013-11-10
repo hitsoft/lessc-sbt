@@ -35,3 +35,7 @@ publishArtifact in Test := false
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
 bintray.Keys.bintrayOrganization in bintray.Keys.bintray := Some("hitsoft")
+
+// ls.implicit.ly
+
+seq(lsSettings:_*)

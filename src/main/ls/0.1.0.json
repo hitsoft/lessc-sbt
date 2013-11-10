@@ -1,0 +1,21 @@
+{
+    "organization": "com.hitsoft",
+    "name": "lessc-sbt",
+    "version": "0.1.0",
+    "description": ".less to .css compilation with local NodeJS lessc command",
+    "site": "http://github.com/hitsoft/lessc-sbt",
+    "tags": ["sbt", "less", "lessc"],
+    "docs": "http://github.com/hitsoft/lessc-sbt",
+    "licenses": [
+        {
+            "name": "MIT",
+            "url": "http://opensource.org/licenses/mit-license.php"
+        }
+    ],
+    "resolvers": ["http://dl.bintray.com/content/hitsoft/sbt-plugin-releases/"],
+    "dependencies": [],
+    "scalas": [
+        "2.10.2"
+    ],
+    "sbt": true
+}
