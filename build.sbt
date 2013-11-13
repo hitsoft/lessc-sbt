@@ -5,7 +5,7 @@ organization := "com.hitsoft"
 name := "lessc-sbt"
 
 version <<= sbtVersion(v =>
-  if (v.startsWith("0.13")) "0.1.0"
+  if (v.startsWith("0.13")) "0.1.1"
   else error("unsupported sbt version %s" format v)
 )
 

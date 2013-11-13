@@ -39,7 +39,8 @@ object Plugin extends sbt.Plugin {
     mini: Boolean)(mapping: LessSourceMapping) =
     try {
       log.debug("Compiling %s" format mapping.lessFile)
-      Process(Seq("lessc", if(mini) "--compress" else "", mapping.lessFile.getAbsolutePath, mapping.cssFile.getAbsolutePath)).! match {
+      IO.createDirectory(mapping.cssFile.getParentFile)
+      Process(Seq("lessc", if(mini) "--compress" else "", mapping.lessFile.getAbsolutePath, if (mini) mapping.cssFile.getCanonicalPath.replace(".css", ".min.css") else mapping.cssFile.getCanonicalPath)).! match {
         case 0 => Some(mapping.cssFile)
         case n => sys.error("Could not compile %s source %s".format("lessc", mapping.cssFile))
       }
