@@ -1,6 +1,6 @@
 seq(lessSettings:_*)
 
-(LessKeys.filter in (Compile, LessKeys.less)) := "bootstrap.less"
+(LessKeys.entryFilter in (Compile, LessKeys.less)) := "bootstrap.less"
 
 InputKey[Unit]("contents") <<= inputTask { (argsTask: TaskKey[Seq[String]]) =>
   (argsTask, streams) map {

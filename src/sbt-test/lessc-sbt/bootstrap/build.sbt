@@ -3,7 +3,7 @@ seq(lessSettings:_*)
 // one file does it all
 // https://github.com/twitter/bootstrap/blob/v2.0.0/Makefile#L15
 
-(LessKeys.filter in (Compile, LessKeys.less)) := "bootstrap.less"
+(LessKeys.entryFilter in (Compile, LessKeys.less)) := "bootstrap.less"
 
 InputKey[Unit]("contents") <<= inputTask { (argsTask: TaskKey[Seq[String]]) =>
   (argsTask, streams) map {

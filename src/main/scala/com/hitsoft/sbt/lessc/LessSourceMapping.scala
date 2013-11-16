@@ -2,28 +2,22 @@ package com.hitsoft.sbt.lessc
 
 import java.io.File
 import sbt.IO
+import sbt.Path._
 
+class LessSourceMapping(val sourcesDir: File, val lessFile: File, val cssDir: File, val lessSources: Seq[File], val mini: Boolean) {
 
-
-class LessSourceMapping(
-  val lessFile: File, sourcesDir: File,
-  targetDir: File, cssDir: File) {
-  import sbt.Path._ // File -> RichFile
-  val relPath = IO.relativize(sourcesDir, lessFile).get
-  lazy val cssFile = new File(cssDir, relPath.replaceFirst("\\.less$",".css"))
-  lazy val importsFile = new File(targetDir, relPath + ".imports")
-  lazy val parentDir = lessFile.getParentFile
-
-  def imports = IO.read(importsFile).split(Files.ImportsDelimiter).collect {
-    case fileName if fileName.trim.length > 0 => new File(parentDir, fileName)
+  private def cssPath = {
+    val relPath = IO.relativize(sourcesDir, lessFile).get
+    val res = relPath.replaceFirst("\\.entry\\.less$", ".css").replaceFirst("\\.less$", ".css")
+    if (mini)
+      res.replaceFirst("\\.css$", ".min.css")
+    else
+      res
   }
 
-  def changed =
-    (!importsFile.exists
-    || (lessFile newerThan cssFile)
-    || (imports exists (_ newerThan cssFile)))
+  val cssFile = new File(cssDir, cssPath)
 
-  def path = lessFile.getPath.replace('\\', '/')
+  def changed = (lessFile newerThan cssFile) || (lessSources exists (_ newerThan cssFile))
 
   override def toString = lessFile.toString
 }

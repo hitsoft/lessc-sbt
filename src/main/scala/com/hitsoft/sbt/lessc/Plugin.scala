@@ -8,23 +8,25 @@ import java.nio.charset.Charset
 import scala.sys.process.Process
 
 
-
 /** Sbt frontend for the less CSS compiler */
 object Plugin extends sbt.Plugin {
 
   object LessKeys {
     lazy val less = TaskKey[Seq[File]](
-      "less", "Compiles .less sources.")
+      "less", "Compiles .less files sources filtered by entryFilter if them were changed.")
+    lazy val forceLess = TaskKey[Seq[File]](
+      "force-less", "Compiles .less files sources filtered by entryFilter regardless of freshness.")
     lazy val mini = SettingKey[Boolean](
-      "mini", "Minifies compiled .less sources. Default is false.")
+      "mini", "Minifies compiled .less sources. Default is false. If true, output css file will have .min.css extension.")
     lazy val charset = SettingKey[Charset](
       "charset", "Sets the character encoding used in file IO. Default is utf-8.")
-    lazy val filter = SettingKey[FileFilter](
-      "filter", "Filter for selecting less sources from default directories.")
-    lazy val all = TaskKey[Seq[File]](
-      "all", "Compiles all .less sources regardless of freshness")
+    lazy val entryFilter = SettingKey[FileFilter](
+      "entry-filter", "Filter for selecting less files to compile. Default is *.entry.less.")
+    lazy val unmanagedLessSources = TaskKey[Seq[File]](
+      "unmanaged-less-sources", "List of source less files that could be used in compilation")
   }
-  import LessKeys.{ less => lesskey, _ }
+
+  import LessKeys.{less => lesskey, _}
 
   private def lessCleanTask =
     (streams, resourceManaged in lesskey) map {
@@ -34,73 +36,98 @@ object Plugin extends sbt.Plugin {
     }
 
   private def compileSource(
-    charset: Charset,
-    log: Logger,
-    mini: Boolean)(mapping: LessSourceMapping) =
+                             charset: Charset,
+                             log: Logger,
+                             mini: Boolean)(mapping: LessSourceMapping) =
     try {
       log.debug("Compiling %s" format mapping.lessFile)
       IO.createDirectory(mapping.cssFile.getParentFile)
-      Process(Seq("lessc", if(mini) "--compress" else "", mapping.lessFile.getAbsolutePath, if (mini) mapping.cssFile.getCanonicalPath.replace(".css", ".min.css") else mapping.cssFile.getCanonicalPath)).! match {
+
+      Process(Seq("lessc", if (mini) "--compress" else "", mapping.lessFile.getCanonicalPath, mapping.cssFile.getCanonicalPath)).! match {
         case 0 => Some(mapping.cssFile)
-        case n => sys.error("Could not compile %s source %s".format("lessc", mapping.cssFile))
+        case n => sys.error("Could not compile %s source %s".format(mapping.cssFile, mapping.lessFile))
       }
     } catch {
       case NonFatal(e) => throw new RuntimeException(
         "Error occured while compiling %s:\n%s" format(
-        mapping, e.getMessage), e)
+          mapping, e.getMessage), e)
     }
 
-  private def allCompileTask =
-    (streams, sourceDirectory in lesskey,
-     resourceManaged in lesskey, target in lesskey,
-     filter in lesskey, excludeFilter in lesskey,
-     charset in lesskey, mini in lesskey) map compileIf { _ => true }
+  private def forceLessCompileTask =
+    (streams,
+      sourceDirectory in lesskey,
+      unmanagedSources in lesskey,
+      unmanagedLessSources in lesskey,
+      resourceManaged in lesskey,
+      charset in lesskey, mini in lesskey) map compileIf {
+      _ => true
+    }
 
   private def lessCompileTask =
-    (streams, sourceDirectory in lesskey,
-     resourceManaged in lesskey, target in lesskey,
-     filter in lesskey, excludeFilter in lesskey,
-     charset in lesskey, mini in lesskey) map compileIf(_.changed)
+    (streams,
+      sourceDirectory in lesskey,
+      unmanagedSources in lesskey,
+      unmanagedLessSources in lesskey,
+      resourceManaged in lesskey,
+      charset in lesskey, mini in lesskey) map compileIf(_.changed)
 
   private def compileIf(cond: LessSourceMapping => Boolean)
-    (out: std.TaskStreams[ScopedKey[_]], sourcesDir: File, cssDir: File, targetDir: File,
-     incl: FileFilter, excl: FileFilter, charset: Charset, mini: Boolean) =
-       (for {
-         file <- sourcesDir.descendantsExcept(incl, excl).get
-         lessSrc = new LessSourceMapping(file, sourcesDir, targetDir, cssDir)
-         if cond(lessSrc)
-       } yield lessSrc) match {
-         case Nil =>
-           out.log.debug("No less sources to compile")
-           compiled(cssDir)
-         case files =>
-           out.log.info("Compiling %d less sources to %s" format (
-           files.size, cssDir))
-           files map compileSource(charset, out.log, mini)
-           compiled(cssDir)
-       }
+                       (out: std.TaskStreams[ScopedKey[_]], sourcesDir: File, entryFiles: Seq[File], lessFiles: Seq[File],
+                        cssDir: File, charset: Charset, mini: Boolean) =
+    (for {
+      file <- entryFiles
+      mapping = new LessSourceMapping(sourcesDir, file, cssDir, lessFiles, mini)
+      if cond(mapping)
+    } yield mapping) match {
+      case Nil =>
+        out.log.debug("No less sources to compile")
+        compiled(cssDir)
+      case files =>
+        out.log.info("Compiling %d less sources to %s" format(
+          files.size, cssDir))
+        files map compileSource(charset, out.log, mini)
+        compiled(cssDir)
+    }
 
-  // move defaultExcludes to excludeFilter in unmanagedSources later
+  private def lessEntriesTask =
+    (sourceDirectory in lesskey, entryFilter in lesskey, excludeFilter in lesskey) map {
+      (sourceDir, incl, excl) =>
+        sourceDir.descendantsExcept(incl, excl).get
+    }
+
   private def lessSourcesTask =
-    (sourceDirectory in lesskey, filter in lesskey, excludeFilter in lesskey) map {
-      (sourceDir, filt, excl) =>
-         sourceDir.descendantsExcept(filt, excl).get
+    (sourceDirectory in lesskey, includeFilter in lesskey, excludeFilter in lesskey, entryFilter in lesskey) map {
+      (sourceDir, incl, excl, entry) =>
+        sourceDir.descendantsExcept(incl, excl || entry).get
     }
 
   private def compiled(under: File) = (under ** "*.css").get
 
-  def lessSettingsIn(c: Configuration): Seq[Setting[_]] =
+  def lessSettingsManualCompileIn(c: Configuration): Seq[Setting[_]] =
     inConfig(c)(lessSettings0 ++ Seq(
-      sourceDirectory in lesskey <<= (sourceDirectory in c) { _ / "less" },
-      resourceManaged in lesskey <<= (resourceManaged in c) { _ / "css" },
-      cleanFiles in lesskey <<= (resourceManaged in lesskey, target in lesskey)(_ :: _ :: Nil),
-      watchSources in lesskey <<= (unmanagedSources in lesskey)
+      sourceDirectory in lesskey <<= (sourceDirectory in c) {
+        _ / "less"
+      },
+      resourceManaged in lesskey <<= (resourceManaged in c) {
+        _ / "css"
+      },
+      cleanFiles in lesskey <<= (resourceManaged in lesskey)(_ :: Nil),
+      watchSources in lesskey <<= (unmanagedSources in lesskey),
+      watchSources in lesskey <++= (unmanagedLessSources in lesskey)
     )) ++ Seq(
       cleanFiles <++= (cleanFiles in lesskey in c),
       watchSources <++= (watchSources in lesskey in c),
-      resourceGenerators in c <+= lesskey in c,
-      compile in c <<= (compile in c).dependsOn(lesskey in c)
+      resourceGenerators in c <+= lesskey in c
     )
+
+  def lessSettingsIn(c: Configuration): Seq[Setting[_]] =
+    lessSettingsManualCompileIn(c) ++
+    inConfig(c)(Seq(
+      compile in c <<= (compile in c).dependsOn(lesskey in c)
+    ))
+
+  def lessSettingsManualCompile: Seq[Setting[_]] =
+    lessSettingsManualCompileIn(Compile) ++ lessSettingsManualCompileIn(Test)
 
   def lessSettings: Seq[Setting[_]] =
     lessSettingsIn(Compile) ++ lessSettingsIn(Test)
@@ -108,11 +135,13 @@ object Plugin extends sbt.Plugin {
   def lessSettings0: Seq[Setting[_]] = Seq(
     charset in lesskey := Charset.forName("utf-8"),
     mini in lesskey := false,
-    filter in lesskey := "*.less",
+    entryFilter in lesskey := "*.entry.less",
+    includeFilter in lesskey := "*.less",
     excludeFilter in lesskey <<= excludeFilter in Global,
-    unmanagedSources in lesskey <<= lessSourcesTask,
+    unmanagedSources in lesskey <<= lessEntriesTask,
+    unmanagedLessSources in lesskey <<= lessSourcesTask,
     clean in lesskey <<= lessCleanTask,
     lesskey <<= lessCompileTask,
-    all in lesskey <<= allCompileTask
+    forceLess in lesskey <<= forceLessCompileTask
   )
 }

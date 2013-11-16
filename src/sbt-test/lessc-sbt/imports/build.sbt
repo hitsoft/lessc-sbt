@@ -1,5 +1,7 @@
 seq(lessSettings:_*)
 
+(LessKeys.entryFilter in (Compile, LessKeys.less)) := "*.less"
+
 (excludeFilter in (Compile, LessKeys.less)) ~= { ff => ff || "b.less" }
 
 InputKey[Unit]("contents") <<= inputTask { (argsTask: TaskKey[Seq[String]]) =>
