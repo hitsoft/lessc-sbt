@@ -4,11 +4,13 @@ import java.io.File
 import sbt.IO
 import sbt.Path._
 
-class LessSourceMapping(val sourcesDir: File, val lessFile: File, val cssDir: File, val lessSources: Seq[File], val mini: Boolean) {
+class LessSourceMapping(val sourcesDir: File, val lessFile: File, val cssDir: File, val lessSources: Seq[File], val mini: Boolean, val suffix: String) {
 
   private def cssPath = {
     val relPath = IO.relativize(sourcesDir, lessFile).get
-    val res = relPath.replaceFirst("\\.entry\\.less$", ".css").replaceFirst("\\.less$", ".css")
+    var res = relPath.replaceFirst("\\.entry\\.less$", ".css").replaceFirst("\\.less$", ".css")
+    if (suffix != null)
+      res = res.replaceFirst("\\.css$", ".%s.css" format suffix)
     if (mini)
       res.replaceFirst("\\.css$", ".min.css")
     else

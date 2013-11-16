@@ -20,6 +20,8 @@ object Plugin extends sbt.Plugin {
       "mini", "Minifies compiled .less sources. Default is false. If true, output css file will have .min.css extension.")
     lazy val charset = SettingKey[Charset](
       "charset", "Sets the character encoding used in file IO. Default is utf-8.")
+    lazy val suffix = SettingKey[String](
+      "suffix", "String to append to output filename (before file extension)")
     lazy val entryFilter = SettingKey[FileFilter](
       "entry-filter", "Filter for selecting less files to compile. Default is *.entry.less.")
     lazy val unmanagedLessSources = TaskKey[Seq[File]](
@@ -59,7 +61,7 @@ object Plugin extends sbt.Plugin {
       unmanagedSources in lesskey,
       unmanagedLessSources in lesskey,
       resourceManaged in lesskey,
-      charset in lesskey, mini in lesskey) map compileIf {
+      charset in lesskey, mini in lesskey, suffix in lesskey) map compileIf {
       _ => true
     }
 
@@ -69,14 +71,14 @@ object Plugin extends sbt.Plugin {
       unmanagedSources in lesskey,
       unmanagedLessSources in lesskey,
       resourceManaged in lesskey,
-      charset in lesskey, mini in lesskey) map compileIf(_.changed)
+      charset in lesskey, mini in lesskey, suffix in lesskey) map compileIf(_.changed)
 
   private def compileIf(cond: LessSourceMapping => Boolean)
                        (out: std.TaskStreams[ScopedKey[_]], sourcesDir: File, entryFiles: Seq[File], lessFiles: Seq[File],
-                        cssDir: File, charset: Charset, mini: Boolean) =
+                        cssDir: File, charset: Charset, mini: Boolean, suffix: String) =
     (for {
       file <- entryFiles
-      mapping = new LessSourceMapping(sourcesDir, file, cssDir, lessFiles, mini)
+      mapping = new LessSourceMapping(sourcesDir, file, cssDir, lessFiles, mini, suffix)
       if cond(mapping)
     } yield mapping) match {
       case Nil =>
