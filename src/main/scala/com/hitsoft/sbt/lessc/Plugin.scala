@@ -129,10 +129,10 @@ object Plugin extends sbt.Plugin {
     ))
 
   def lessSettingsManualCompile: Seq[Setting[_]] =
-    lessSettingsManualCompileIn(Compile) ++ lessSettingsManualCompileIn(Test)
+    lessSettingsManualCompileIn(Compile)
 
   def lessSettings: Seq[Setting[_]] =
-    lessSettingsIn(Compile) ++ lessSettingsIn(Test)
+    lessSettingsIn(Compile)
 
   def lessSettings0: Seq[Setting[_]] = Seq(
     charset in lesskey := Charset.forName("utf-8"),
