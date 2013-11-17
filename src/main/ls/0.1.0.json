@@ -1,6 +1,6 @@
 {
     "organization": "com.hitsoft",
-    "name": "lessc-sbt",
+    "name": "sbt-lessc",
     "version": "0.1.0",
     "description": ".less to .css compilation with local NodeJS lessc command",
     "site": "http://github.com/hitsoft/lessc-sbt",
