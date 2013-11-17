@@ -1,4 +1,4 @@
-[lessc-sbt][lsbt] compiles [less][less] gaining you more.
+[sbt-lessc][lsbt] compiles [less][less] gaining you more.
 
-[lsbt]: https://github.com/hitsoft/lessc-sbt#readme
+[lsbt]: https://github.com/hitsoft/sbt-lessc#readme
 [less]: http://lesscss.org/

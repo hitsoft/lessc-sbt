@@ -1,4 +1,4 @@
-# lessc-sbt
+# sbt-lessc
 
 Compilation of .less files to .css using your local lessc command.
 
@@ -12,7 +12,7 @@ resolvers += Resolver.url(
     url("http://dl.bintray.com/content/hitsoft/sbt-plugin-releases")
     )(Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.hitsoft" % "lessc-sbt" % "0.1.0")
+addSbtPlugin("com.hitsoft" % "sbt-lessc" % "0.1.2")
 ```
 
 _NOTE_ this plugin is targeting the next release of sbt, 0.13.0
@@ -32,14 +32,20 @@ Add the following to your `build.sbt` file
 
 ```scala
 seq(closureSettings:_*)
-
-// Specify here your main .less file name that will be compiled to css/*.css file in your webapp
-(LessKeys.filter in (Compile, LessKeys.less)) := "app.less"
 ```
 
 Default configuration suppose you have following files structure
 
 `src/main/less` - the place where your less files should be placed
+
+All files named *.entry.less will be compiled to .css
+
+If you'd like to specify some custom filter of files to compile, you could use following snippet
+
+```scala
+// Specify here your main .less file name that will be compiled to css/*.css file in your webapp
+(LessKeys.entryFilter in (Compile, LessKeys.less)) := "app.less"
+```
 
 ## Customization
 
