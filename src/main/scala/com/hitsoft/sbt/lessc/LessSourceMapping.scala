@@ -9,7 +9,7 @@ class LessSourceMapping(val sourcesDir: File, val lessFile: File, val cssDir: Fi
   private def cssPath = {
     val relPath = IO.relativize(sourcesDir, lessFile).get
     var res = relPath.replaceFirst("\\.entry\\.less$", ".css").replaceFirst("\\.less$", ".css")
-    if (suffix != null)
+    if (!suffix.isEmpty)
       res = res.replaceFirst("\\.css$", ".%s.css" format suffix)
     if (mini)
       res.replaceFirst("\\.css$", ".min.css")

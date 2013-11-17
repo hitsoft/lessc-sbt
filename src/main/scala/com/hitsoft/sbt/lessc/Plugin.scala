@@ -14,8 +14,8 @@ object Plugin extends sbt.Plugin {
   object LessKeys {
     lazy val less = TaskKey[Seq[File]](
       "less", "Compiles .less files sources filtered by entryFilter if them were changed.")
-    lazy val forceLess = TaskKey[Seq[File]](
-      "force-less", "Compiles .less files sources filtered by entryFilter regardless of freshness.")
+    lazy val force = TaskKey[Seq[File]](
+      "force", "Compiles .less files sources filtered by entryFilter regardless of freshness.")
     lazy val mini = SettingKey[Boolean](
       "mini", "Minifies compiled .less sources. Default is false. If true, output css file will have .min.css extension.")
     lazy val charset = SettingKey[Charset](
@@ -139,11 +139,12 @@ object Plugin extends sbt.Plugin {
     mini in lesskey := false,
     entryFilter in lesskey := "*.entry.less",
     includeFilter in lesskey := "*.less",
+    suffix in lesskey := "",
     excludeFilter in lesskey <<= excludeFilter in Global,
     unmanagedSources in lesskey <<= lessEntriesTask,
     unmanagedLessSources in lesskey <<= lessSourcesTask,
     clean in lesskey <<= lessCleanTask,
     lesskey <<= lessCompileTask,
-    forceLess in lesskey <<= forceLessCompileTask
+    force in lesskey <<= forceLessCompileTask
   )
 }
