@@ -20,7 +20,7 @@ object Plugin extends sbt.Plugin {
       "mini", "Minifies compiled .less sources. Default is false. If true, output css file will have .min.css extension.")
     lazy val charset = SettingKey[Charset](
       "charset", "Sets the character encoding used in file IO. Default is utf-8.")
-    lazy val suffix = SettingKey[String](
+    lazy val suffix = TaskKey[String](
       "suffix", "String to append to output filename (before file extension)")
     lazy val entryFilter = SettingKey[FileFilter](
       "entry-filter", "Filter for selecting less files to compile. Default is *.entry.less.")
