@@ -26,6 +26,8 @@ object Plugin extends sbt.Plugin {
       "entry-filter", "Filter for selecting less files to compile. Default is *.entry.less.")
     lazy val unmanagedLessSources = TaskKey[Seq[File]](
       "unmanaged-less-sources", "List of source less files that could be used in compilation")
+    lazy val lessc = SettingKey[String](
+      "lessc", "lessc command")
   }
 
   import LessKeys.{less => lesskey, _}
@@ -37,7 +39,7 @@ object Plugin extends sbt.Plugin {
         IO.delete(target)
     }
 
-  private def compileSource(
+  private def compileSource(lessc: String,
                              charset: Charset,
                              log: Logger,
                              mini: Boolean)(mapping: LessSourceMapping) =
@@ -45,7 +47,7 @@ object Plugin extends sbt.Plugin {
       log.debug("Compiling %s" format mapping.lessFile)
       IO.createDirectory(mapping.cssFile.getParentFile)
 
-      Process(Seq("lessc", if (mini) "--compress" else "", mapping.lessFile.getCanonicalPath, mapping.cssFile.getCanonicalPath)).! match {
+      Process(Seq(lessc, if (mini) "--compress" else "", mapping.lessFile.getCanonicalPath, mapping.cssFile.getCanonicalPath)).! match {
         case 0 => Some(mapping.cssFile)
         case n => sys.error("Could not compile %s source %s".format(mapping.cssFile, mapping.lessFile))
       }
@@ -57,6 +59,7 @@ object Plugin extends sbt.Plugin {
 
   private def forceLessCompileTask =
     (streams,
+      lessc in lesskey,
       sourceDirectory in lesskey,
       unmanagedSources in lesskey,
       unmanagedLessSources in lesskey,
@@ -67,6 +70,7 @@ object Plugin extends sbt.Plugin {
 
   private def lessCompileTask =
     (streams,
+      lessc in lesskey,
       sourceDirectory in lesskey,
       unmanagedSources in lesskey,
       unmanagedLessSources in lesskey,
@@ -74,7 +78,7 @@ object Plugin extends sbt.Plugin {
       charset in lesskey, mini in lesskey, suffix in lesskey) map compileIf(_.changed)
 
   private def compileIf(cond: LessSourceMapping => Boolean)
-                       (out: std.TaskStreams[ScopedKey[_]], sourcesDir: File, entryFiles: Seq[File], lessFiles: Seq[File],
+                       (out: std.TaskStreams[ScopedKey[_]], lessc: String, sourcesDir: File, entryFiles: Seq[File], lessFiles: Seq[File],
                         cssDir: File, charset: Charset, mini: Boolean, suffix: String) =
     (for {
       file <- entryFiles
@@ -87,7 +91,7 @@ object Plugin extends sbt.Plugin {
       case files =>
         out.log.info("Compiling %d less sources to %s" format(
           files.size, cssDir))
-        files map compileSource(charset, out.log, mini)
+        files map compileSource(lessc, charset, out.log, mini)
         compiled(cssDir)
     }
 
@@ -145,6 +149,7 @@ object Plugin extends sbt.Plugin {
     unmanagedLessSources in lesskey <<= lessSourcesTask,
     clean in lesskey <<= lessCleanTask,
     lesskey <<= lessCompileTask,
-    force in lesskey <<= forceLessCompileTask
+    force in lesskey <<= forceLessCompileTask,
+    lessc in lesskey := "lessc"
   )
 }
