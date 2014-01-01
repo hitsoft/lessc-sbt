@@ -138,6 +138,13 @@ object Plugin extends sbt.Plugin {
   def lessSettings: Seq[Setting[_]] =
     lessSettingsIn(Compile)
 
+  def lesscCommand: String = {
+    System.getProperty("lessc") match {
+      case null => "lessc"
+      case cmd: String => if (cmd.isEmpty) "lessc" else cmd
+    }
+  }
+
   def lessSettings0: Seq[Setting[_]] = Seq(
     charset in lesskey := Charset.forName("utf-8"),
     mini in lesskey := false,
@@ -150,6 +157,6 @@ object Plugin extends sbt.Plugin {
     clean in lesskey <<= lessCleanTask,
     lesskey <<= lessCompileTask,
     force in lesskey <<= forceLessCompileTask,
-    lessc in lesskey := "lessc"
+    lessc in lesskey := lesscCommand
   )
 }
