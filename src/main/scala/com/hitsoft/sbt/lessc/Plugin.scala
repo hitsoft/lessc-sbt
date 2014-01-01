@@ -26,7 +26,7 @@ object Plugin extends sbt.Plugin {
       "entry-filter", "Filter for selecting less files to compile. Default is *.entry.less.")
     lazy val unmanagedLessSources = TaskKey[Seq[File]](
       "unmanaged-less-sources", "List of source less files that could be used in compilation")
-    lazy val lessc = SettingKey[String](
+    lazy val lessc = SettingKey[Seq[String]](
       "lessc", "lessc command")
   }
 
@@ -39,7 +39,7 @@ object Plugin extends sbt.Plugin {
         IO.delete(target)
     }
 
-  private def compileSource(lessc: String,
+  private def compileSource(lessc: Seq[String],
                              charset: Charset,
                              log: Logger,
                              mini: Boolean)(mapping: LessSourceMapping) =
@@ -47,7 +47,7 @@ object Plugin extends sbt.Plugin {
       log.debug("Compiling %s" format mapping.lessFile)
       IO.createDirectory(mapping.cssFile.getParentFile)
 
-      Process(Seq(lessc, if (mini) "--compress" else "", mapping.lessFile.getCanonicalPath, mapping.cssFile.getCanonicalPath)).! match {
+      Process(lessc ++ Seq(if (mini) "--compress" else "", mapping.lessFile.getCanonicalPath, mapping.cssFile.getCanonicalPath)).! match {
         case 0 => Some(mapping.cssFile)
         case n => sys.error("Could not compile %s source %s".format(mapping.cssFile, mapping.lessFile))
       }
@@ -78,7 +78,7 @@ object Plugin extends sbt.Plugin {
       charset in lesskey, mini in lesskey, suffix in lesskey) map compileIf(_.changed)
 
   private def compileIf(cond: LessSourceMapping => Boolean)
-                       (out: std.TaskStreams[ScopedKey[_]], lessc: String, sourcesDir: File, entryFiles: Seq[File], lessFiles: Seq[File],
+                       (out: std.TaskStreams[ScopedKey[_]], lessc: Seq[String], sourcesDir: File, entryFiles: Seq[File], lessFiles: Seq[File],
                         cssDir: File, charset: Charset, mini: Boolean, suffix: String) =
     (for {
       file <- entryFiles
@@ -138,10 +138,10 @@ object Plugin extends sbt.Plugin {
   def lessSettings: Seq[Setting[_]] =
     lessSettingsIn(Compile)
 
-  def lesscCommand: String = {
+  def lesscCommand: Seq[String] = {
     System.getProperty("lessc") match {
-      case null => "lessc"
-      case cmd: String => if (cmd.isEmpty) "lessc" else cmd
+      case null => Seq("lessc")
+      case cmd: String => if (cmd.isEmpty) Seq("lessc") else cmd.split("\\+\\+\\+").toSeq
     }
   }
 
