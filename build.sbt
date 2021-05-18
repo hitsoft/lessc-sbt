@@ -11,15 +11,15 @@ description := "Sbt plugin for compiling Less CSS sources with lessc system comm
 
 // Plugin tests with Scripted
 
-seq(scriptedSettings:_*)
+// seq(scriptedSettings:_*)
 
-scriptedLaunchOpts <<= (scriptedLaunchOpts, version).apply {
-  (scriptedOpts, vers) =>
-    scriptedOpts ++ Seq(
-      "-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + vers
-    )
-}
+// scriptedLaunchOpts <<= (scriptedLaunchOpts, version).apply {
+//  (scriptedOpts, vers) =>
+//    scriptedOpts ++ Seq(
+//      "-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + vers
+//    )
+// }
 
-scriptedBufferLog := false
+// scriptedBufferLog := false
 
 licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
